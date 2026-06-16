@@ -1,0 +1,37 @@
+#include <iostream>
+#include <cmath>
+using namespace std;
+
+static double wrapAngle(double a){
+    while(a > 180.0) a -= 360.0;
+    while(a <= -180.0) a += 360.0;
+    return a;
+}
+
+class AimAssist {
+    double assistFactor; // 0..1
+    double maxStepDeg;   // maximum degrees per update
+public:
+    AimAssist(double percent)
+      : assistFactor(max(0.0,min(1.0,percent/100.0))), maxStepDeg(15.0 + (1.0-assistFactor)*35.0) {}
+    double step(double currentDeg, double targetDeg){
+        double diff = wrapAngle(targetDeg - currentDeg);
+        double step = diff * (0.1 * assistFactor); // small portion
+        // clamp to maxStepDeg
+        if(step > maxStepDeg) step = maxStepDeg;
+        if(step < -maxStepDeg) step = -maxStepDeg;
+        return wrapAngle(currentDeg + step);
+    }
+};
+
+int main(int argc, char** argv){
+    double pct = 72.0;
+    if(argc>1) try{ pct = stod(argv[1]); } catch(...) {}
+    AimAssist aa(pct);
+    cout << "AimAssist (pct="<<pct<<") - nhap current target (degrees) pairs\n";
+    double cur, tgt;
+    while(cin>>cur>>tgt){
+        cout << aa.step(cur,tgt) << "\n";
+    }
+    return 0;
+}

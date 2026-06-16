@@ -1,0 +1,49 @@
+#include <iostream>
+#include <vector>
+#include <string>
+#include <sstream>
+#include <chrono>
+#include <thread>
+using namespace std;
+
+// Usage: ./code1 [percent]
+// If percent absent, defaults to 80.
+
+double parsePercent(int argc, char** argv, double def=80.0){
+    if(argc>1) try{ return stod(argv[1]); } catch(...){}
+    return def;
+}
+
+class HeadFollow {
+    double alpha; // smoothing factor 0..1
+    double state;
+public:
+    HeadFollow(double percent, double init=0.0)
+      : alpha(0.05 + (max(0.0,min(100.0,percent))/100.0)*0.94), state(init)
+    {}
+    double update(double target){
+        state += alpha * (target - state);
+        return state;
+    }
+    double get() const { return state; }
+};
+
+int main(int argc, char** argv){
+    double pct = parsePercent(argc, argv, 80.0);
+    HeadFollow hf(pct);
+    cout << "HeadFollow (pct="<<pct<<") - Nhap cac gia tri (enter dong trong de ket thuc):\n";
+    string line;
+    while(true){
+        cout << "> ";
+        if(!getline(cin, line)) break;
+        if(line.empty()) break;
+        stringstream ss(line);
+        double v;
+        while(ss>>v){
+            double out = hf.update(v);
+            cout << "in="<<v<<" -> follow="<<out<<"\n";
+        }
+    }
+    cout << "Final state: "<<hf.get()<<"\n";
+    return 0;
+}

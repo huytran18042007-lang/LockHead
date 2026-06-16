@@ -1,0 +1,37 @@
+#include <iostream>
+#include <cmath>
+using namespace std;
+
+class RegionHold {
+    double xmin,xmax,ymin,ymax;
+    double hold; // 0..1
+    double softBand; // how wide is the soft band
+public:
+    RegionHold(double percent, double xmin_=-30,double xmax_=30,double ymin_=-20,double ymax_=20)
+      : xmin(xmin_),xmax(xmax_),ymin(ymin_),ymax(ymax_), hold(max(0.0,min(1.0,percent/100.0))),
+        softBand(5.0) {}
+    double clamp1D(double v, double mn, double mx){
+        if(v < mn - softBand) return mn - softBand + (v - (mn - softBand))*(1.0-hold);
+        if(v > mx + softBand) return mx + softBand + (v - (mx + softBand))*(1.0-hold);
+        // within soft area: interpolate towards boundary
+        if(v < mn) return mn + (v - mn) * (1.0 - hold);
+        if(v > mx) return mx + (v - mx) * (1.0 - hold);
+        return v;
+    }
+    pair<double,double> apply(double x,double y){
+        return { clamp1D(x,xmin,xmax), clamp1D(y,ymin,ymax) };
+    }
+};
+
+int main(int argc, char** argv){
+    double pct=51.0;
+    if(argc>1) try{ pct=stod(argv[1]); } catch(...) {}
+    RegionHold rh(pct);
+    cout << "RegionHold (pct="<<pct<<") - nhap pairs x y, Ctrl+D to end\n";
+    double x,y;
+    while(cin>>x>>y){
+        auto p = rh.apply(x,y);
+        cout << p.first << " " << p.second << "\n";
+    }
+    return 0;
+}
