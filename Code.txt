@@ -1,0 +1,65 @@
+#pragma once
+#include <chrono>
+#include <memory>
+#include <vector>
+#include <Metal/Metal.h>
+#include <QuartzCore/CAMetalLayer.h>
+
+class OptimizedGameLoop {
+private:
+    id<MTLDevice> metalDevice;
+    id<MTLCommandQueue> commandQueue;
+    CAMetalLayer* metalLayer;
+
+    std::chrono::high_resolution_clock::time_point lastFrameTime;
+    std::chrono::nanoseconds targetFrameTime;
+    
+    struct RenderObject {
+        id<MTLBuffer> vertexBuffer;
+        id<MTLTexture> texture;
+        std::vector<float> transform;
+        bool visible;
+        int layer;
+    };
+    
+    std::vector<RenderObject> renderObjects;
+    std::vector<RenderObject*> visibleObjects;
+    
+    float deltaTime;
+    int frameCount;
+    float fpsAccumulator;
+    float currentFPS;
+    
+    int poolSize;
+    std::vector<id<MTLBuffer>> vertexBufferPool;
+    std::vector<id<MTLTexture>> texturePool;
+    
+    id<MTLBuffer> constantBuffer;
+    id<MTLRenderPipelineState> pipelineState;
+    id<MTLDepthStencilState> depthStencilState;
+    
+    bool useInstancedRendering;
+    bool enableCulling;
+    bool vsyncEnabled;
+    int maxDrawCalls;
+    
+    void setupMetal();
+    void createPipelines();
+    void updateConstants();
+    void cullObjects();
+    void batchDrawCalls();
+    id<MTLBuffer> getBufferFromPool(size_t size);
+    void recycleBuffer(id<MTLBuffer> buffer);
+    
+public:
+    OptimizedGameLoop(CAMetalLayer* layer, int targetFPS = 60);
+    ~OptimizedGameLoop();
+    
+    void update();
+    void render();
+    void gameLoop();
+    
+    void addRenderObject(const RenderObject& obj);
+    void setVSyncEnabled(bool enabled);
+    float getFPS() const;
+};
